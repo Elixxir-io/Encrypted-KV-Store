@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"github.com/pkg/errors"
+	"gitlab.com/elixxir/ekv/portableOS"
 	"io"
 	"os"
 	"sync"
@@ -41,13 +42,13 @@ func NewFilestore(basedir, password string) (*Filestore, error) {
 func NewFilestoreWithNonceGenerator(basedir, password string,
 	csprng io.Reader) (*Filestore, error) {
 	// Create the directory if it doesn't exist, otherwise do nothing.
-	err := os.MkdirAll(basedir, 0700)
+	err := portableOS.MkdirAll(basedir, 0700)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	// Get the path to the "ekv" file
-	ekvPath := basedir + string(os.PathSeparator) + ".ekv"
+	ekvPath := basedir + string(portableOS.PathSeparator) + ".ekv"
 	expectedContents := []byte("version:1")
 
 	// Try to read the .ekv.1/2 file, if it exists then we check
@@ -63,7 +64,7 @@ func NewFilestoreWithNonceGenerator(basedir, password string,
 			}
 
 			if !bytes.Equal(ekvContents, expectedContents) {
-				return nil, errors.Errorf("Bad decryption: " +
+				return nil, errors.Errorf("Bad decryption: "+
 					"%s != %s", ekvContents,
 					expectedContents)
 			}
@@ -168,7 +169,7 @@ func (f *Filestore) getLock(encryptedKey string) *sync.RWMutex {
 func (f *Filestore) getKey(key string) string {
 	encryptedKey := hashStringWithPassword(key, f.password)
 	encryptedKeyStr := hex.EncodeToString(encryptedKey)
-	return f.basedir + string(os.PathSeparator) + encryptedKeyStr
+	return f.basedir + string(portableOS.PathSeparator) + encryptedKeyStr
 }
 
 func (f *Filestore) getData(key string) ([]byte, error) {

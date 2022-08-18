@@ -64,9 +64,15 @@ type File interface {
 // A FileInfo describes a file and is returned by Stat. It contains a subset of
 // the methods on os.FileInfo that are used in this repository.
 type FileInfo interface {
+	// Name returns the base name of the file.
+	Name() string
+
 	// Size returns the length in bytes for regular files; system-dependent for
 	// others.
 	Size() int64
+
+	// IsDir reports whether the file describes a directory.
+	IsDir() bool
 }
 
 // A FileMode represents a file's mode and permission bits. The bits have the

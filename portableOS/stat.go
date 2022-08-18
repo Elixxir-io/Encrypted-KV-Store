@@ -12,6 +12,6 @@ import (
 )
 
 // Stat returns a FileInfo describing the named file.
-var Stat func(name string) (FileInfo, error) = func(name string) (FileInfo, error) {
+var Stat = func(name string) (FileInfo, error) {
 	return os.Stat(name)
 }

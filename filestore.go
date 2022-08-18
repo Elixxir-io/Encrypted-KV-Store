@@ -48,7 +48,7 @@ func NewFilestoreWithNonceGenerator(basedir, password string,
 	}
 
 	// Get the path to the "ekv" file
-	ekvPath := basedir + string(portableOS.PathSeparator) + ".ekv"
+	ekvPath := basedir + string(os.PathSeparator) + ".ekv"
 	expectedContents := []byte("version:1")
 
 	// Try to read the .ekv.1/2 file, if it exists then we check
@@ -169,7 +169,7 @@ func (f *Filestore) getLock(encryptedKey string) *sync.RWMutex {
 func (f *Filestore) getKey(key string) string {
 	encryptedKey := hashStringWithPassword(key, f.password)
 	encryptedKeyStr := hex.EncodeToString(encryptedKey)
-	return f.basedir + string(portableOS.PathSeparator) + encryptedKeyStr
+	return f.basedir + string(os.PathSeparator) + encryptedKeyStr
 }
 
 func (f *Filestore) getData(key string) ([]byte, error) {

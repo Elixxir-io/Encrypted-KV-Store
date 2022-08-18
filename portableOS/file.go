@@ -14,7 +14,7 @@ import (
 // Open opens the named file for reading. If successful, methods on the returned
 // file can be used for reading; the associated file descriptor has mode
 // os.O_RDONLY.
-var Open func(name string) (File, error) = func(name string) (File, error) {
+var Open = func(name string) (File, error) {
 	return os.Open(name)
 }
 
@@ -22,9 +22,9 @@ var Open func(name string) (File, error) = func(name string) (File, error) {
 // truncated. If the file does not exist, it is created with mode 0666 (before
 // umask). If successful, methods on the returned File can be used for I/O; the
 // associated file descriptor has mode os.O_RDWR.
-var Create func(name string) (File, error) = func(name string) (File, error) {
+var Create = func(name string) (File, error) {
 	return os.Create(name)
 }
 
 // Remove removes the named file or directory.
-var Remove func(name string) error = os.Remove
+var Remove = os.Remove

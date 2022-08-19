@@ -70,9 +70,6 @@ type FileInfo interface {
 	// Size returns the length in bytes for regular files; system-dependent for
 	// others.
 	Size() int64
-
-	// IsDir reports whether the file describes a directory.
-	IsDir() bool
 }
 
 // A FileMode represents a file's mode and permission bits. The bits have the

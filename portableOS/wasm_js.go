@@ -10,7 +10,6 @@ package portableOS
 // This file is only compiled for WebAssembly.
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"syscall/js"
 )
@@ -22,8 +21,7 @@ var storage = js.Global().Get("localStorage")
 var Open = func(name string) (File, error) {
 	result := storage.Call("getItem", name)
 	if result.IsNull() {
-		return nil, errors.Errorf(
-			"could not open %q: %+v", name, os.ErrNotExist)
+		return nil, os.ErrNotExist
 	}
 
 	return open(name, result.String(), storage), nil
@@ -55,8 +53,7 @@ var MkdirAll = func(path string, perm FileMode) error {
 var Stat = func(name string) (FileInfo, error) {
 	result := storage.Call("getItem", name)
 	if result.IsNull() {
-		return nil, errors.Errorf(
-			"could not stat %q: %+v", name, os.ErrNotExist)
+		return nil, os.ErrNotExist
 	}
 
 	return &jsFileInfo{

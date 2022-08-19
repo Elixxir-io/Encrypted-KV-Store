@@ -11,7 +11,6 @@ package portableOS
 
 import (
 	"bytes"
-	"github.com/pkg/errors"
 	"os"
 	"sync"
 	"syscall/js"
@@ -65,8 +64,7 @@ func (f *jsFile) Read(b []byte) (n int, err error) {
 	if f.dirty {
 		result := f.storage.Call("getItem", f.keyName)
 		if result.IsNull() {
-			return 0, errors.Errorf(
-				"could not read %q: %+v", f.keyName, os.ErrNotExist)
+			return 0, os.ErrNotExist
 		}
 		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
@@ -86,8 +84,7 @@ func (f *jsFile) ReadAt(b []byte, off int64) (n int, err error) {
 	if f.dirty {
 		result := f.storage.Call("getItem", f.keyName)
 		if result.IsNull() {
-			return 0, errors.Errorf(
-				"could not readAt %q: %+v", f.keyName, os.ErrNotExist)
+			return 0, os.ErrNotExist
 		}
 		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
@@ -112,8 +109,7 @@ func (f *jsFile) Seek(offset int64, whence int) (ret int64, err error) {
 	if f.dirty {
 		result := f.storage.Call("getItem", f.keyName)
 		if result.IsNull() {
-			return 0, errors.Errorf(
-				"could not seek %q: %+v", f.keyName, os.ErrNotExist)
+			return 0, os.ErrNotExist
 		}
 		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
@@ -131,8 +127,7 @@ func (f *jsFile) Sync() error {
 
 	result := f.storage.Call("getItem", f.keyName)
 	if result.IsNull() {
-		return errors.Errorf(
-			"could not sync %q: %+v", f.keyName, os.ErrNotExist)
+		return os.ErrNotExist
 	}
 
 	f.reader.Reset([]byte(result.String()))
@@ -152,8 +147,7 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 
 	result := f.storage.Call("getItem", f.keyName)
 	if result.IsNull() {
-		return 0, errors.Errorf(
-			"could not write %q: %+v", f.keyName, os.ErrNotExist)
+		return 0, os.ErrNotExist
 	}
 
 	f.storage.Set(f.keyName, result.String()+string(b))

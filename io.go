@@ -127,7 +127,7 @@ func getFileOrder(path1, path2 string) (portableOS.File, portableOS.File, error)
 		return file1, nil, nil
 	}
 
-	// Otherwise comparethe modulo monotonic counter and return the result
+	// Otherwise compare the modulo monotonic counter and return the result
 	cmp := compareModMonCntr(t1, t2)
 	if cmp == 1 {
 		return file1, file2, nil

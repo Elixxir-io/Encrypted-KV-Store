@@ -31,7 +31,7 @@ var Open = func(name string) (File, error) {
 // truncated. If the file does not exist, it is created. If successful, methods
 // on the returned File can be used for I/O.
 var Create = func(name string) (File, error) {
-	storage.Call("setItem", name)
+	storage.Call("setItem", name, "")
 	return open(name, "", storage), nil
 }
 

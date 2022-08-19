@@ -31,13 +31,13 @@ var Open = func(name string) (File, error) {
 // truncated. If the file does not exist, it is created. If successful, methods
 // on the returned File can be used for I/O.
 var Create = func(name string) (File, error) {
-	storage.Set(name, "")
+	storage.Call("setItem", name)
 	return open(name, "", storage), nil
 }
 
 // Remove removes the named file or directory.
 var Remove = func(name string) error {
-	storage.Delete(name)
+	storage.Call("removeItem", name)
 	return nil
 }
 

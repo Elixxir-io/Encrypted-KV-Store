@@ -7,6 +7,8 @@
 
 package portableOS
 
+// This file is only compiled for WebAssembly.
+
 import (
 	"os"
 	"syscall/js"

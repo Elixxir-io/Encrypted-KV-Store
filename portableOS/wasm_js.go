@@ -7,13 +7,14 @@
 
 package portableOS
 
+// This file is only compiled for WebAssembly.
+
 import (
 	"github.com/pkg/errors"
 )
 
 // Open opens the named file for reading. If successful, methods on the returned
-// file can be used for reading; the associated file descriptor has mode
-// os.O_RDONLY.
+// file can be used for reading.
 var Open = func(name string) (File, error) {
 	keyValue, err := storage.Get(name)
 	if err != nil {
@@ -24,9 +25,8 @@ var Open = func(name string) (File, error) {
 }
 
 // Create creates or truncates the named file. If the file already exists, it is
-// truncated. If the file does not exist, it is created with mode 0666 (before
-// umask). If successful, methods on the returned File can be used for I/O; the
-// associated file descriptor has mode os.O_RDWR.
+// truncated. If the file does not exist, it is created. If successful, methods
+// on the returned File can be used for I/O.
 var Create = func(name string) (File, error) {
 	storage.Set(name, "")
 	return initFile(name, "", storage), nil

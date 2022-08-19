@@ -5,11 +5,32 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
+//go:build !js || !wasm
+// +build !js !wasm
+
 package portableOS
 
 import (
 	"os"
 )
+
+// Open opens the named file for reading. If successful, methods on the returned
+// file can be used for reading; the associated file descriptor has mode
+// os.O_RDONLY.
+var Open = func(name string) (File, error) {
+	return os.Open(name)
+}
+
+// Create creates or truncates the named file. If the file already exists, it is
+// truncated. If the file does not exist, it is created with mode 0666 (before
+// umask). If successful, methods on the returned File can be used for I/O; the
+// associated file descriptor has mode os.O_RDWR.
+var Create = func(name string) (File, error) {
+	return os.Create(name)
+}
+
+// Remove removes the named file or directory.
+var Remove = os.Remove
 
 // MkdirAll creates a directory named path, along with any necessary parents,
 // and returns nil, or else returns an error. The permission bits perm (before
@@ -17,4 +38,9 @@ import (
 // a directory, MkdirAll does nothing and returns nil.
 var MkdirAll = func(path string, perm FileMode) error {
 	return os.MkdirAll(path, os.FileMode(5))
+}
+
+// Stat returns a FileInfo describing the named file.
+var Stat = func(name string) (FileInfo, error) {
+	return os.Stat(name)
 }

@@ -12,21 +12,23 @@ package portableOS
 import (
 	"bytes"
 	"github.com/pkg/errors"
+	"os"
 	"sync"
+	"syscall/js"
 )
 
-// JsFile represents a File for a Javascript value saved in local storage.
-type JsFile struct {
+// jsFile represents a File for a Javascript value saved in local storage.
+type jsFile struct {
 	keyName string
 	reader  *bytes.Reader
-	storage *jsStorage
+	storage js.Value
 	dirty   bool // Is true when data on disk is different from in memory
 	mux     sync.Mutex
 }
 
-// initFile creates a new in-memory file buffer of the key value.
-func initFile(keyName, keyValue string, storage *jsStorage) *JsFile {
-	f := &JsFile{
+// open creates a new in-memory file buffer of the key value.
+func open(keyName, keyValue string, storage js.Value) *jsFile {
+	f := &jsFile{
 		keyName: keyName,
 		reader:  bytes.NewReader([]byte(keyValue)),
 		storage: storage,
@@ -40,7 +42,7 @@ func initFile(keyName, keyValue string, storage *jsStorage) *JsFile {
 // On files that support SetDeadline, any pending I/O operations will
 // be canceled and return immediately with an ErrClosed error.
 // Close will return an error if it has already been called.
-func (f *JsFile) Close() error {
+func (f *jsFile) Close() error {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
@@ -49,23 +51,24 @@ func (f *JsFile) Close() error {
 }
 
 // Name returns the name of the file as presented to Open.
-func (f *JsFile) Name() string {
+func (f *jsFile) Name() string {
 	return f.keyName
 }
 
 // Read reads up to len(b) bytes from the File and stores them in b.
 // It returns the number of bytes read and any error encountered.
 // At end of file, Read returns 0, io.EOF.
-func (f *JsFile) Read(b []byte) (n int, err error) {
+func (f *jsFile) Read(b []byte) (n int, err error) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue, err := f.storage.Get(f.keyName)
-		if err != nil {
-			return 0, errors.Errorf("could not read %q: %+v", f.keyName, err)
+		result := f.storage.Call("getItem", f.keyName)
+		if result.IsNull() {
+			return 0, errors.Errorf(
+				"could not read %q: %+v", f.keyName, os.ErrNotExist)
 		}
-		f.reader.Reset([]byte(keyValue))
+		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
 	}
 
@@ -76,16 +79,17 @@ func (f *JsFile) Read(b []byte) (n int, err error) {
 // It returns the number of bytes read and the error, if any.
 // ReadAt always returns a non-nil error when n < len(b).
 // At end of file, that error is io.EOF.
-func (f *JsFile) ReadAt(b []byte, off int64) (n int, err error) {
+func (f *jsFile) ReadAt(b []byte, off int64) (n int, err error) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue, err := f.storage.Get(f.keyName)
-		if err != nil {
-			return 0, errors.Errorf("could not readAt %q: %+v", f.keyName, err)
+		result := f.storage.Call("getItem", f.keyName)
+		if result.IsNull() {
+			return 0, errors.Errorf(
+				"could not readAt %q: %+v", f.keyName, os.ErrNotExist)
 		}
-		f.reader.Reset([]byte(keyValue))
+		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
 	}
 
@@ -101,16 +105,17 @@ func (f *JsFile) ReadAt(b []byte, off int64) (n int, err error) {
 // If f is a directory, the behavior of Seek varies by operating system; you
 // can seek to the beginning of the directory on Unix-like operating
 // systems, but not on Windows.
-func (f *JsFile) Seek(offset int64, whence int) (ret int64, err error) {
+func (f *jsFile) Seek(offset int64, whence int) (ret int64, err error) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue, err := f.storage.Get(f.keyName)
-		if err != nil {
-			return 0, errors.Errorf("could not seek %q: %+v", f.keyName, err)
+		result := f.storage.Call("getItem", f.keyName)
+		if result.IsNull() {
+			return 0, errors.Errorf(
+				"could not seek %q: %+v", f.keyName, os.ErrNotExist)
 		}
-		f.reader.Reset([]byte(keyValue))
+		f.reader.Reset([]byte(result.String()))
 		f.dirty = false
 	}
 
@@ -120,16 +125,17 @@ func (f *JsFile) Seek(offset int64, whence int) (ret int64, err error) {
 // Sync commits the current contents of the file to stable storage.
 // Typically, this means flushing the file system's in-memory copy
 // of recently written data to disk.
-func (f *JsFile) Sync() error {
+func (f *jsFile) Sync() error {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
-	keyValue, err := f.storage.Get(f.keyName)
-	if err != nil {
-		return errors.Errorf("could not sync %q: %+v", f.keyName, err)
+	result := f.storage.Call("getItem", f.keyName)
+	if result.IsNull() {
+		return errors.Errorf(
+			"could not sync %q: %+v", f.keyName, os.ErrNotExist)
 	}
 
-	f.reader.Reset([]byte(keyValue))
+	f.reader.Reset([]byte(result.String()))
 	f.dirty = false
 
 	return nil
@@ -138,35 +144,36 @@ func (f *JsFile) Sync() error {
 // Write writes len(b) bytes from b to the File.
 // It returns the number of bytes written and an error, if any.
 // Write returns a non-nil error when n != len(b).
-func (f *JsFile) Write(b []byte) (n int, err error) {
+func (f *jsFile) Write(b []byte) (n int, err error) {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
 	f.dirty = true
 
-	keyValue, err := f.storage.Get(f.keyName)
-	if err != nil {
-		return 0, errors.Errorf("could not write to %q: %+v", f.keyName, err)
+	result := f.storage.Call("getItem", f.keyName)
+	if result.IsNull() {
+		return 0, errors.Errorf(
+			"could not write %q: %+v", f.keyName, os.ErrNotExist)
 	}
 
-	f.storage.Set(f.keyName, keyValue+string(b))
+	f.storage.Set(f.keyName, result.String()+string(b))
 
 	return len(b), nil
 }
 
-// JsFileInfo represents a FileInfo for a Javascript value saved in local
+// jsFileInfo represents a FileInfo for a Javascript value saved in local
 // storage.
-type JsFileInfo struct {
+type jsFileInfo struct {
 	keyName string
 	size    int64
 }
 
 // Name returns the base name of the file.
-func (f *JsFileInfo) Name() string {
+func (f *jsFileInfo) Name() string {
 	return f.keyName
 }
 
 // Size returns the length in bytes.
-func (f *JsFileInfo) Size() int64 {
+func (f *jsFileInfo) Size() int64 {
 	return f.size
 }

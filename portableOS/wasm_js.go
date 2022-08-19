@@ -11,17 +11,22 @@ package portableOS
 
 import (
 	"github.com/pkg/errors"
+	"os"
+	"syscall/js"
 )
+
+var storage = js.Global().Get("localStorage")
 
 // Open opens the named file for reading. If successful, methods on the returned
 // file can be used for reading.
 var Open = func(name string) (File, error) {
-	keyValue, err := storage.Get(name)
-	if err != nil {
-		return nil, errors.Errorf("could not open %q: %+v", name, err)
+	result := storage.Call("getItem", name)
+	if result.IsNull() {
+		return nil, errors.Errorf(
+			"could not open %q: %+v", name, os.ErrNotExist)
 	}
 
-	return initFile(name, keyValue, storage), nil
+	return open(name, result.String(), storage), nil
 }
 
 // Create creates or truncates the named file. If the file already exists, it is
@@ -29,7 +34,7 @@ var Open = func(name string) (File, error) {
 // on the returned File can be used for I/O.
 var Create = func(name string) (File, error) {
 	storage.Set(name, "")
-	return initFile(name, "", storage), nil
+	return open(name, "", storage), nil
 }
 
 // Remove removes the named file or directory.
@@ -48,13 +53,14 @@ var MkdirAll = func(path string, perm FileMode) error {
 
 // Stat returns a FileInfo describing the named file.
 var Stat = func(name string) (FileInfo, error) {
-	keyValue, err := storage.Get(name)
-	if err != nil {
-		return nil, errors.Errorf("could not open %q: %+v", name, err)
+	result := storage.Call("getItem", name)
+	if result.IsNull() {
+		return nil, errors.Errorf(
+			"could not stat %q: %+v", name, os.ErrNotExist)
 	}
 
-	return &JsFileInfo{
+	return &jsFileInfo{
 		keyName: name,
-		size:    int64(len(keyValue)),
+		size:    int64(len(result.String())),
 	}, nil
 }

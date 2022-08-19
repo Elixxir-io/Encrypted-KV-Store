@@ -203,6 +203,9 @@ func createFile(path string) (portableOS.File, error) {
 	// Open directory and flush it
 	dirname := filepath.Dir(path)
 	d, err := portableOS.Open(dirname)
+	if err != nil {
+		return portableOS.Create(path)
+	}
 	d.Sync()
 	d.Close()
 

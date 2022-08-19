@@ -21,9 +21,6 @@ var storage = js.Global().Get("localStorage")
 var Open = func(name string) (File, error) {
 	result := storage.Call("getItem", name)
 	if result.IsNull() {
-		if name[len(name)-1:] == string(os.PathSeparator) {
-			return &jsDir{name}, nil
-		}
 		return nil, os.ErrNotExist
 	}
 

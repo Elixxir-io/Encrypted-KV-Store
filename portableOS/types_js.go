@@ -155,20 +155,6 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-// jsDir represents a directory File for a Javascript. It does nothing because
-// there are no directories in the key value store system.
-type jsDir struct {
-	name string
-}
-
-func (j *jsDir) Close() error                      { return nil }
-func (j *jsDir) Name() string                      { return j.name }
-func (j *jsDir) Read([]byte) (int, error)          { return 0, nil }
-func (j *jsDir) ReadAt([]byte, int64) (int, error) { return 0, nil }
-func (j *jsDir) Seek(int64, int) (int64, error)    { return 0, nil }
-func (j *jsDir) Sync() error                       { return nil }
-func (j *jsDir) Write([]byte) (int, error)         { return 0, nil }
-
 // jsFileInfo represents a FileInfo for a Javascript value saved in local
 // storage.
 type jsFileInfo struct {

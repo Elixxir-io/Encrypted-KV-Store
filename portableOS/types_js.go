@@ -20,7 +20,7 @@ type JsFile struct {
 	keyName string
 	reader  *bytes.Reader
 	storage *jsStorage
-	dirty   bool
+	dirty   bool // Is true when data on disk is different from in memory
 	mux     sync.Mutex
 }
 
@@ -66,6 +66,7 @@ func (f *JsFile) Read(b []byte) (n int, err error) {
 			return 0, errors.Errorf("could not read %q: %+v", f.keyName, err)
 		}
 		f.reader.Reset([]byte(keyValue))
+		f.dirty = false
 	}
 
 	return f.reader.Read(b)
@@ -85,6 +86,7 @@ func (f *JsFile) ReadAt(b []byte, off int64) (n int, err error) {
 			return 0, errors.Errorf("could not readAt %q: %+v", f.keyName, err)
 		}
 		f.reader.Reset([]byte(keyValue))
+		f.dirty = false
 	}
 
 	return f.reader.ReadAt(b, off)
@@ -109,6 +111,7 @@ func (f *JsFile) Seek(offset int64, whence int) (ret int64, err error) {
 			return 0, errors.Errorf("could not seek %q: %+v", f.keyName, err)
 		}
 		f.reader.Reset([]byte(keyValue))
+		f.dirty = false
 	}
 
 	return f.reader.Seek(offset, whence)
@@ -127,6 +130,8 @@ func (f *JsFile) Sync() error {
 	}
 
 	f.reader.Reset([]byte(keyValue))
+	f.dirty = false
+
 	return nil
 }
 

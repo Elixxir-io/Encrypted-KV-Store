@@ -21,6 +21,9 @@ var storage = js.Global().Get("localStorage")
 var Open = func(name string) (File, error) {
 	result := storage.Call("getItem", name)
 	if result.IsNull() {
+		if name[len(name)-1:] == string(os.PathSeparator) {
+			return &jsDir{name}, nil
+		}
 		return nil, os.ErrNotExist
 	}
 
@@ -45,9 +48,7 @@ var Remove = func(name string) error {
 // and returns nil, or else returns an error. The permission bits perm (before
 // umask) are used for all directories that MkdirAll creates. If path is already
 // a directory, MkdirAll does nothing and returns nil.
-var MkdirAll = func(path string, perm FileMode) error {
-	return nil
-}
+var MkdirAll = func(path string, perm FileMode) error { return nil }
 
 // Stat returns a FileInfo describing the named file.
 var Stat = func(name string) (FileInfo, error) {

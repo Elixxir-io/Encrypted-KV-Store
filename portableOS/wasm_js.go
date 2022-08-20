@@ -10,7 +10,9 @@ package portableOS
 // This file is only compiled for WebAssembly.
 
 import (
+	"encoding/base64"
 	"os"
+	"strings"
 	"syscall/js"
 )
 
@@ -38,6 +40,26 @@ var Create = func(name string) (File, error) {
 // Remove removes the named file or directory.
 var Remove = func(name string) error {
 	storage.Call("removeItem", name)
+	return nil
+}
+
+// RemoveAll removes path and any children it contains.
+// It removes everything it can but returns the first error
+// it encounters. If the path does not exist, RemoveAll
+// returns nil (no error).
+// If there is an error, it will be of type *PathError.
+var RemoveAll = func(path string) error {
+	for i := 0; i < storage.Get("length").Int(); i++ {
+		keyName := storage.Call("key", i).String()
+		result := storage.Call("getItem", keyName)
+		if result.IsNull() {
+			return os.ErrNotExist
+		}
+		if strings.HasPrefix(keyName, path) {
+			storage.Call("removeItem", keyName)
+		}
+	}
+
 	return nil
 }
 

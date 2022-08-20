@@ -11,6 +11,8 @@ package portableOS
 
 import (
 	"bytes"
+	"encoding/base64"
+	"github.com/pkg/errors"
 	"os"
 	"sync"
 	"syscall/js"
@@ -170,4 +172,10 @@ func (f *jsFileInfo) Name() string {
 // Size returns the length in bytes.
 func (f *jsFileInfo) Size() int64 {
 	return f.size
+}
+
+// IsDir reports whether m describes a directory.
+// That is, it tests for the ModeDir bit being set in m.
+func (f *jsFileInfo) IsDir() bool {
+	return false
 }

@@ -32,6 +32,13 @@ var Create = func(name string) (File, error) {
 // Remove removes the named file or directory.
 var Remove = os.Remove
 
+// RemoveAll removes path and any children it contains.
+// It removes everything it can but returns the first error
+// it encounters. If the path does not exist, RemoveAll
+// returns nil (no error).
+// If there is an error, it will be of type *PathError.
+var RemoveAll = os.RemoveAll
+
 // MkdirAll creates a directory named path, along with any necessary parents,
 // and returns nil, or else returns an error. The permission bits perm (before
 // umask) are used for all directories that MkdirAll creates. If path is already

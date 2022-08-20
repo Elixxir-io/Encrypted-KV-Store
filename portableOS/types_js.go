@@ -64,11 +64,17 @@ func (f *jsFile) Read(b []byte) (n int, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		result := f.storage.Call("getItem", f.keyName)
-		if result.IsNull() {
+		keyValue := f.storage.Call("getItem", f.keyName)
+		if keyValue.IsNull() {
 			return 0, os.ErrNotExist
 		}
-		f.reader.Reset([]byte(result.String()))
+
+		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		if err != nil {
+			return 0, err
+		}
+
+		f.reader.Reset(s)
 		f.dirty = false
 	}
 
@@ -84,11 +90,16 @@ func (f *jsFile) ReadAt(b []byte, off int64) (n int, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		result := f.storage.Call("getItem", f.keyName)
-		if result.IsNull() {
+		keyValue := f.storage.Call("getItem", f.keyName)
+		if keyValue.IsNull() {
 			return 0, os.ErrNotExist
 		}
-		f.reader.Reset([]byte(result.String()))
+		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		if err != nil {
+			return 0, err
+		}
+
+		f.reader.Reset(s)
 		f.dirty = false
 	}
 
@@ -109,11 +120,17 @@ func (f *jsFile) Seek(offset int64, whence int) (ret int64, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		result := f.storage.Call("getItem", f.keyName)
-		if result.IsNull() {
+		keyValue := f.storage.Call("getItem", f.keyName)
+		if keyValue.IsNull() {
 			return 0, os.ErrNotExist
 		}
-		f.reader.Reset([]byte(result.String()))
+
+		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		if err != nil {
+			return 0, err
+		}
+
+		f.reader.Reset(s)
 		f.dirty = false
 	}
 
@@ -147,13 +164,26 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 
 	f.dirty = true
 
-	result := f.storage.Call("getItem", f.keyName)
-	if result.IsNull() {
+	keyValue := f.storage.Call("getItem", f.keyName)
+	if keyValue.IsNull() {
 		return 0, os.ErrNotExist
 	}
 
-	f.storage.Set(f.keyName, result.String()+string(b))
+	s, err := base64.StdEncoding.DecodeString(keyValue.String())
+	if err != nil {
+		return 0, errors.Errorf("error: %+v", err)
+	}
 
+	s = append(s, b...)
+
+	base128Str := base64.StdEncoding.EncodeToString(s)
+	f.storage.Call("setItem", f.keyName, base128Str)
+
+	keyValue2 := f.storage.Call("getItem", f.keyName)
+	s, err = base64.StdEncoding.DecodeString(keyValue2.String())
+	if err != nil {
+		return 0, errors.Errorf("error2: %+v", err)
+	}
 	return len(b), nil
 }
 

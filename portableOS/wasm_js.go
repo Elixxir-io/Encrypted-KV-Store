@@ -21,19 +21,25 @@ var storage = js.Global().Get("localStorage")
 // Open opens the named file for reading. If successful, methods on the returned
 // file can be used for reading.
 var Open = func(name string) (File, error) {
-	result := storage.Call("getItem", name)
-	if result.IsNull() {
+	keyValue := storage.Call("getItem", name)
+	if keyValue.IsNull() {
 		return nil, os.ErrNotExist
 	}
 
-	return open(name, result.String(), storage), nil
+	s, err := base64.StdEncoding.DecodeString(keyValue.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return open(name, string(s), storage), nil
 }
 
 // Create creates or truncates the named file. If the file already exists, it is
 // truncated. If the file does not exist, it is created. If successful, methods
 // on the returned File can be used for I/O.
 var Create = func(name string) (File, error) {
-	storage.Call("setItem", name, "")
+	storage.Call("setItem", name, base64.StdEncoding.EncodeToString([]byte("")))
+
 	return open(name, "", storage), nil
 }
 
@@ -71,13 +77,18 @@ var MkdirAll = func(path string, perm FileMode) error { return nil }
 
 // Stat returns a FileInfo describing the named file.
 var Stat = func(name string) (FileInfo, error) {
-	result := storage.Call("getItem", name)
-	if result.IsNull() {
+	keyValue := storage.Call("getItem", name)
+	if keyValue.IsNull() {
 		return nil, os.ErrNotExist
+	}
+
+	s, err := base64.StdEncoding.DecodeString(keyValue.String())
+	if err != nil {
+		return nil, err
 	}
 
 	return &jsFileInfo{
 		keyName: name,
-		size:    int64(len(result.String())),
+		size:    int64(len(s)),
 	}, nil
 }

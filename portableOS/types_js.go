@@ -192,7 +192,6 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 type jsFileInfo struct {
 	keyName string
 	size    int64
-	isDir   bool
 }
 
 // Name returns the base name of the file.
@@ -208,5 +207,5 @@ func (f *jsFileInfo) Size() int64 {
 // IsDir reports whether m describes a directory.
 // That is, it tests for the ModeDir bit being set in m.
 func (f *jsFileInfo) IsDir() bool {
-	return f.isDir
+	return false
 }

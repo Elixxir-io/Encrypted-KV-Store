@@ -169,21 +169,16 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 		return 0, os.ErrNotExist
 	}
 
-	s, err := base64.StdEncoding.DecodeString(keyValue.String())
+	decodedKeyValue, err := base64.StdEncoding.DecodeString(keyValue.String())
 	if err != nil {
 		return 0, errors.Errorf("error: %+v", err)
 	}
 
-	s = append(s, b...)
+	decodedKeyValue = append(decodedKeyValue, b...)
 
-	base128Str := base64.StdEncoding.EncodeToString(s)
-	f.storage.Call("setItem", f.keyName, base128Str)
+	encodedValue := base64.StdEncoding.EncodeToString(decodedKeyValue)
+	f.storage.Call("setItem", f.keyName, encodedValue)
 
-	keyValue2 := f.storage.Call("getItem", f.keyName)
-	s, err = base64.StdEncoding.DecodeString(keyValue2.String())
-	if err != nil {
-		return 0, errors.Errorf("error2: %+v", err)
-	}
 	return len(b), nil
 }
 

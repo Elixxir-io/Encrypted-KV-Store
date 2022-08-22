@@ -203,10 +203,8 @@ func createFile(path string) (portableOS.File, error) {
 	// Open directory and flush it
 	dirname := filepath.Dir(path)
 	d, err := portableOS.Open(dirname)
-	if err == nil {
-		d.Sync()
-		d.Close()
-	}
+	d.Sync()
+	d.Close()
 
 	return portableOS.Create(path)
 }
@@ -259,12 +257,10 @@ func deleteFiles(path string, csprng io.Reader) error {
 	// Open directory and flush it
 	dirname := filepath.Dir(path)
 	d, err := portableOS.Open(dirname)
-	if err == nil {
-		d.Sync()
-		d.Close()
-	}
+	d.Sync()
+	d.Close()
 
-	return nil
+	return err
 }
 
 // write to the file and verify the data can be read

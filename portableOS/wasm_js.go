@@ -18,6 +18,10 @@ import (
 
 var storage = js.Global().Get("localStorage")
 
+// directory is the contents of a value to signify that it represents a
+// directory.
+const directory = "\x1B[Directory]\x1B"
+
 // Open opens the named file for reading. If successful, methods on the returned
 // file can be used for reading.
 var Open = func(name string) (File, error) {
@@ -73,7 +77,12 @@ var RemoveAll = func(path string) error {
 // and returns nil, or else returns an error. The permission bits perm (before
 // umask) are used for all directories that MkdirAll creates. If path is already
 // a directory, MkdirAll does nothing and returns nil.
-var MkdirAll = func(path string, perm FileMode) error { return nil }
+var MkdirAll = func(path string, perm FileMode) error {
+	storage.Call("setItem", path, base64.StdEncoding.EncodeToString(
+		[]byte(directory)))
+	open(path, "", storage)
+	return nil
+}
 
 // Stat returns a FileInfo describing the named file.
 var Stat = func(name string) (FileInfo, error) {
@@ -90,5 +99,6 @@ var Stat = func(name string) (FileInfo, error) {
 	return &jsFileInfo{
 		keyName: name,
 		size:    int64(len(s)),
+		isDir:   string(s) == directory,
 	}, nil
 }

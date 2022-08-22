@@ -11,24 +11,20 @@ package portableOS
 
 import (
 	"bytes"
-	"encoding/base64"
-	"github.com/pkg/errors"
-	"os"
 	"sync"
-	"syscall/js"
 )
 
 // jsFile represents a File for a Javascript value saved in local storage.
 type jsFile struct {
 	keyName string
 	reader  *bytes.Reader
-	storage js.Value
+	storage *jsStore
 	dirty   bool // Is true when data on disk is different from in memory
 	mux     sync.Mutex
 }
 
 // open creates a new in-memory file buffer of the key value.
-func open(keyName, keyValue string, storage js.Value) *jsFile {
+func open(keyName, keyValue string, storage *jsStore) *jsFile {
 	f := &jsFile{
 		keyName: keyName,
 		reader:  bytes.NewReader([]byte(keyValue)),
@@ -64,17 +60,12 @@ func (f *jsFile) Read(b []byte) (n int, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue := f.storage.Call("getItem", f.keyName)
-		if keyValue.IsNull() {
-			return 0, os.ErrNotExist
-		}
-
-		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		keyValue, err := f.storage.getItem(f.keyName)
 		if err != nil {
 			return 0, err
 		}
 
-		f.reader.Reset(s)
+		f.reader.Reset(keyValue)
 		f.dirty = false
 	}
 
@@ -90,16 +81,12 @@ func (f *jsFile) ReadAt(b []byte, off int64) (n int, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue := f.storage.Call("getItem", f.keyName)
-		if keyValue.IsNull() {
-			return 0, os.ErrNotExist
-		}
-		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		keyValue, err := f.storage.getItem(f.keyName)
 		if err != nil {
 			return 0, err
 		}
 
-		f.reader.Reset(s)
+		f.reader.Reset(keyValue)
 		f.dirty = false
 	}
 
@@ -120,17 +107,12 @@ func (f *jsFile) Seek(offset int64, whence int) (ret int64, err error) {
 	defer f.mux.Unlock()
 
 	if f.dirty {
-		keyValue := f.storage.Call("getItem", f.keyName)
-		if keyValue.IsNull() {
-			return 0, os.ErrNotExist
-		}
-
-		s, err := base64.StdEncoding.DecodeString(keyValue.String())
+		keyValue, err := f.storage.getItem(f.keyName)
 		if err != nil {
 			return 0, err
 		}
 
-		f.reader.Reset(s)
+		f.reader.Reset(keyValue)
 		f.dirty = false
 	}
 
@@ -144,12 +126,12 @@ func (f *jsFile) Sync() error {
 	f.mux.Lock()
 	defer f.mux.Unlock()
 
-	result := f.storage.Call("getItem", f.keyName)
-	if result.IsNull() {
-		return os.ErrNotExist
+	keyValue, err := f.storage.getItem(f.keyName)
+	if err != nil {
+		return err
 	}
 
-	f.reader.Reset([]byte(result.String()))
+	f.reader.Reset(keyValue)
 	f.dirty = false
 
 	return nil
@@ -164,20 +146,14 @@ func (f *jsFile) Write(b []byte) (n int, err error) {
 
 	f.dirty = true
 
-	keyValue := f.storage.Call("getItem", f.keyName)
-	if keyValue.IsNull() {
-		return 0, os.ErrNotExist
-	}
-
-	decodedKeyValue, err := base64.StdEncoding.DecodeString(keyValue.String())
+	keyValue, err := f.storage.getItem(f.keyName)
 	if err != nil {
-		return 0, errors.Errorf("error: %+v", err)
+		return 0, err
 	}
 
-	decodedKeyValue = append(decodedKeyValue, b...)
+	keyValue = append(keyValue, b...)
 
-	encodedValue := base64.StdEncoding.EncodeToString(decodedKeyValue)
-	f.storage.Call("setItem", f.keyName, encodedValue)
+	f.storage.setItem(f.keyName, keyValue)
 
 	return len(b), nil
 }
@@ -202,5 +178,5 @@ func (f *jsFileInfo) Size() int64 {
 // IsDir reports whether m describes a directory.
 // That is, it tests for the ModeDir bit being set in m.
 func (f *jsFileInfo) IsDir() bool {
-	return false
+	return true
 }

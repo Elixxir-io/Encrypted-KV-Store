@@ -5,6 +5,7 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
+// This file is only compiled for all architectures except WebAssembly.
 //go:build !js || !wasm
 // +build !js !wasm
 

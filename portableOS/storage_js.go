@@ -5,6 +5,8 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
+// This file is only compiled for WebAssembly.
+
 package portableOS
 
 import (
@@ -13,8 +15,7 @@ import (
 	"syscall/js"
 )
 
-// This file is only compiled for WebAssembly.
-
+// jsStore contains the js.Value representation of localStorage.
 type jsStore struct {
 	js.Value
 }
@@ -91,8 +92,8 @@ func (s *jsStore) key(n int) (string, error) {
 	return keyName.String(), nil
 }
 
-// length returns the number of keys in localStorage. Underneath, it calls
-// localStorage.length.
+// length returns the number of keys in localStorage. Underneath, it accesses
+// the property localStorage.length.
 //
 //  - Specification:
 //    https://html.spec.whatwg.org/multipage/webstorage.html#dom-storage-key-dev

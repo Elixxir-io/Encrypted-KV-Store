@@ -5,9 +5,9 @@
 // LICENSE file                                                              //
 ///////////////////////////////////////////////////////////////////////////////
 
-package portableOS
-
 // This file is only compiled for WebAssembly.
+
+package portableOS
 
 import (
 	"strings"
